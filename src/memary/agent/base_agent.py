@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List
+import re
 
 import geocoder
 import googlemaps
@@ -234,6 +235,29 @@ class Agent(object):
             max_triplets_per_chunk=8,
         )
 
+    def addKG(self, query: str):
+        """Add the query to the knowledge graph.
+
+        Args: query (str) : query to add to the knowledge graph in the format: 'put <item> in <container>'
+
+        """
+        
+        # Example put blue tie in black small suitcase"
+        match = re.match(r"put (.+) in (.+)", query)
+        if not match:
+            return
+        
+        item = match.group(1)
+        container = match.group(2)
+        
+        cypher_query = f"""
+        MERGE (i:Item {{name: "{item}"}})
+        MERGE (c:Container {{name: "{container}"}})
+        MERGE (i)-[:CONTAINED_IN]->(c)
+        """
+        self.graph_store.run_query(cypher_query)
+    
+
     def check_KG(self, query: str) -> bool:
         """Check if the query is in the knowledge graph.
 
@@ -321,6 +345,8 @@ class Agent(object):
         self._add_contexts_to_llm_message("assistant", content, index=2)
         logging.info(f"Contexts summarized successfully. \n summary: {response}")
         logging.info(f"Total tokens after eviction: {total_tokens*EVICTION_RATE}")
+
+
 
     def _get_chat_response(self, llm_message_chat: str) -> str:
         """Get response from the LLM chat model.
@@ -424,8 +450,13 @@ class Agent(object):
     def _init_ReAct_agent(self):
         """Initializes ReAct Agent with list of tools in self.tools."""
         tool_fns = []
-        for func in self.tools.values():
-            tool_fns.append(FunctionTool.from_defaults(fn=func))
+
+        # leaves tools blank for this since we only want to use knowledge graph no search and all
+        # for func in self.tools.values():
+        #     tool_fns.append(FunctionTool.from_defaults(fn=func))
+
+        #tool for adding to database
+
         self.routing_agent = ReActAgent.from_tools(tool_fns, llm=self.llm, verbose=True)
 
     def _init_default_tools(self, default_tools: List[str]):
@@ -435,38 +466,18 @@ class Agent(object):
             default_tools (list(str)): list of tool names in string form
         """
 
-        for tool in default_tools:
-            if tool == "search":
-                self.tools["search"] = self.search
-            elif tool == "locate":
-                self.tools["locate"] = self.locate
-            elif tool == "vision":
-                self.tools["vision"] = self.vision
-            elif tool == "stocks":
-                self.tools["stocks"] = self.stocks
+        # for tool in default_tools:
+        #     if tool == "search":
+        #         self.tools["search"] = self.search
+        #     elif tool == "locate":
+        #         self.tools["locate"] = self.locate
+        #     elif tool == "vision":
+        #         self.tools["vision"] = self.vision
+        #     elif tool == "stocks":
+        #         self.tools["stocks"] = self.stocks
+
         self._init_ReAct_agent()
 
-    def add_tool(self, tool_additions: Dict[str, Callable[..., Any]]):
-        """Adds specified tools to be used by the ReAct Agent.
-        Args:
-            tools (dict(str, func)): dictionary of tools with names as keys and associated functions as values
-        """
-
-        for tool_name in tool_additions:
-            self.tools[tool_name] = tool_additions[tool_name]
-        self._init_ReAct_agent()
-
-    def remove_tool(self, tool_name: str):
-        """Removes specified tool from list of available tools for use by the ReAct Agent.
-        Args:
-            tool_name (str): name of tool to be removed in string form
-        """
-
-        if tool_name in self.tools:
-            del self.tools[tool_name]
-            self._init_ReAct_agent()
-        else:
-            raise ("Unknown tool_name provided for removal.")
 
     def update_tools(self, updated_tools: List[str]):
         """Resets ReAct Agent tools to only include subset of default tools.
@@ -474,14 +485,14 @@ class Agent(object):
             updated_tools (list(str)): list of default tools to include
         """
 
-        self.tools.clear()
-        for tool in updated_tools:
-            if tool == "search":
-                self.tools["search"] = self.search
-            elif tool == "locate":
-                self.tools["locate"] = self.locate
-            elif tool == "vision":
-                self.tools["vision"] = self.vision
-            elif tool == "stocks":
-                self.tools["stocks"] = self.stocks
+        # self.tools.clear()
+        # for tool in updated_tools:
+        #     if tool == "search":
+        #         self.tools["search"] = self.search
+        #     elif tool == "locate":
+        #         self.tools["locate"] = self.locate
+        #     elif tool == "vision":
+        #         self.tools["vision"] = self.vision
+        #     elif tool == "stocks":
+        #         self.tools["stocks"] = self.stocks
         self._init_ReAct_agent()

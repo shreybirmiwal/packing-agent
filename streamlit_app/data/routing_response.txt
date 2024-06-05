@@ -1,0 +1,6 @@
+Thought: I need to use a tool to help me answer the question.
+Action: search
+Action Input: {'query': 'where is the blue shirt'}
+Observation: assistant: The question does not provide enough context to determine the exact location of a blue shirt. Could you please specify which blue shirt you are referring to and where it was last seen or kept?
+Thought: I cannot answer the question with the provided tools.
+Answer: Sorry, I cannot answer your query.
