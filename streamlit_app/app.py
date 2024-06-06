@@ -152,7 +152,14 @@ if selected_llm_model and selected_vision_model:
                 st.write("Please enter a item and where you put it!")
                 st.stop()
 
-            #insert into the db where the item was palces                      
+            #insert into the db where the item was palces             
+            chat_agent.add_chat("user", "Save the following data in the KG. Do not perform any search :"+query1)
+            react_response1 = chat_agent.get_routing_agent_response("Save the following data in the KG. Do not perform any search :"+query1)
+            chat_agent.add_chat("system", "ReAct agent: " + react_response1)
+
+
+            #     react_response = chat_agent.get_routing_agent_response(query)
+            #     chat_agent.add_chat("system", "ReAct agent: " + react_response)
 
 
     with col2:
@@ -210,8 +217,9 @@ if selected_llm_model and selected_vision_model:
                 graph_html = graph.generate_html(f"graph_{random.randint(0, 1000)}.html")
                 components.html(graph_html, height=500, scrolling=True)
             else:
-                st.subheader("Knowledge Graph")
-                st.text("No information found in the knowledge graph")
+                st.write("")
+                #st.subheader("Knowledge Graph")
+                #st.text("No information found in the knowledge graph")
 
             st.subheader("Final Response")
             wrapped_text = textwrap.fill(answer, width=80)

@@ -10,5 +10,33 @@
     {
         "role": "user",
         "content": "where is the blue shirt?"
+    },
+    {
+        "role": "user",
+        "content": "i put the blue shirt in the black suitcase"
+    },
+    {
+        "role": "user",
+        "content": "Where is the blue shirt"
+    },
+    {
+        "role": "user",
+        "content": "where is blue shirt"
+    },
+    {
+        "role": "user",
+        "content": "Where did I put that green tie?"
+    },
+    {
+        "role": "user",
+        "content": "Search the KG to find where this item is stored: where is blue shirt"
+    },
+    {
+        "role": "user",
+        "content": "Search the KG to find where this item is stored: Where did I put the blue shirt??"
+    },
+    {
+        "role": "user",
+        "content": "Where Did the blue shirt get packed"
     }
 ]

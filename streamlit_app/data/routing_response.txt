@@ -1,6 +1,6 @@
 Thought: I need to use a tool to help me answer the question.
 Action: search
-Action Input: {'query': '2+2'}
-Observation: assistant: The sum of 2 plus 2 is equal to 4.
+Action Input: {'query': 'I put the blue shirt in the black suitcase'}
+Observation: assistant: You placed a blue shirt into a black suitcase.
 Thought: I can answer without using any more tools.
-Answer: 4
+Answer: The data has been saved in the KG.
