@@ -14,8 +14,8 @@ from pyvis.network import Network
 # src should sit in the same level as /streamlit_app
 curr_dir = os.getcwd()
 
-#parent_dir = os.path.dirname(curr_dir)
-parent_dir = os.path.dirname(curr_dir) + '/packing-memary' #Use this if error: src not found. Also move the '/streamlit_app/data' folder to the 'memary' folder, outside the 'src' folder.
+parent_dir = os.path.dirname(curr_dir)
+# parent_dir = os.path.dirname(curr_dir) + '/memary' #Use this if error: src not found. Also move the '/streamlit_app/data' folder to the 'memary' folder, outside the 'src' folder.
 
 sys.path.append(parent_dir + "/src")
 
@@ -100,6 +100,7 @@ cypher_query = "MATCH p = (:Entity)-[r]-()  RETURN p, r LIMIT 1000;"
 answer = ""
 external_response = ""
 st.title("Packing-Agent")
+st.write("Tell the agent where you packed your things as you pack, and then later ask it where you packed them.")
 
 llm_models = ["gpt-3.5-turbo"]
 vision_models = ["gpt-4-vision-preview"]
@@ -133,90 +134,48 @@ if selected_llm_model and selected_vision_model:
     st.write(" ")
     clear_memory = st.button("Clear Memory DB")
 
+    if clear_memory:
+        # print("Front end recieved request to clear memory")
+        chat_agent.clearMemory()
+        st.write("Memory DB cleared")
 
 
     col1, col2 = st.columns(2)
 
-
-
     with col1:
-        st.subheader("Store items in DB")
-        query = st.text_input(r"'I put the blue shirt in the black suitcase'")
-        generate_clicked = st.button("Pack items!")
+        st.subheader("Store Items in DB")
+        query1 = st.text_input(r"'I put the blue shirt in the black suitcase'")
+        generate_clicked1 = st.button("Pack items!")
 
-        if generate_clicked:
-            if query == "":
-                st.write("Please enter a valid item and where you put it!")
+        if generate_clicked1:
+            if query1 == "":
+                st.write("Please enter a item and where you put it!")
                 st.stop()
 
-            query = "Store the following data in the knowledge graph: " + query
-
-            react_response = chat_agent.get_routing_agent_response(query)
-            chat_agent.add_chat("system", "ReAct agent: " + react_response)
-
-
-            if cypher_query:
-                nodes = set()
-                edges = []  # (node1, node2, [relationships])
-                fill_graph(nodes, edges, cypher_query)
-
-                st.subheader("Knowledge Graph")
-                st.text("Subgraph:")
-                graph = create_graph(nodes, edges)
-                graph_html = graph.generate_html(f"graph_{random.randint(0, 1000)}.html")
-                components.html(graph_html, height=500, scrolling=True)
-            else:
-                st.subheader("Knowledge Graph")
-                st.text("No information found in the knowledge graph")
-
-            if len(chat_agent.memory_stream) > 0:
-                # Memory Stream
-                memory_items = chat_agent.memory_stream.get_memory()
-                memory_items_dicts = [item.to_dict() for item in memory_items]
-                df = pd.DataFrame(memory_items_dicts)
-                st.write("Memory Stream")
-                st.dataframe(df)
-
-                # Entity Knowledge Store
-                knowledge_memory_items = chat_agent.entity_knowledge_store.get_memory()
-                knowledge_memory_items_dicts = [
-                    item.to_dict() for item in knowledge_memory_items
-                ]
-                df_knowledge = pd.DataFrame(knowledge_memory_items_dicts)
-                st.write("Entity Knowledge Store")
-                st.dataframe(df_knowledge)
-
-                # top entities
-                top_entities = chat_agent._select_top_entities()
-                df_top = pd.DataFrame(top_entities)
-                st.write("Top 20 Entities")
-                st.dataframe(df_top)
+            #insert into the db where the item was palces                      
 
 
     with col2:
         st.subheader("Where did I put that?")
         query = st.text_input("Ask a question")
         generate_clicked = st.button("Find items!")
+
         st.write("")
 
-        if clear_memory:
-            # print("Front end recieved request to clear memory")
-            chat_agent.clearMemory()
-            st.write("Memory DB cleared")
-
         if generate_clicked:
-
             if query == "":
                 st.write("Please enter a question")
                 st.stop()
-            
-            query = "Search the knowledge graph and knowledge graph only to determine where the item was placed" + query
+
+
+            chat_agent.update_tools(['search']) #search tool only
 
 
             react_response = ""
             rag_response = (
                 "There was no information in knowledge_graph to answer your question."
             )
+            
             chat_agent.add_chat("user", query)
             cypher_query = chat_agent.check_KG(query)
             if cypher_query:
@@ -224,10 +183,12 @@ if selected_llm_model and selected_vision_model:
                     query, return_entity=True
                 )
                 chat_agent.add_chat("system", "ReAct agent: " + rag_response, entities)
-            else:
-                # get response
-                react_response = chat_agent.get_routing_agent_response(query)
-                chat_agent.add_chat("system", "ReAct agent: " + react_response)
+
+            # ONLY WANT DATA FROM DB, SINCE WE SEARCHING WHERE USER PUT THINGS, not checking google.
+            # else:
+            #     # get response
+            #     react_response = chat_agent.get_routing_agent_response(query)
+            #     chat_agent.add_chat("system", "ReAct agent: " + react_response)
 
             answer = chat_agent.get_response()
             st.subheader("Routing Agent Response")
